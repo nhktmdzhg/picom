@@ -155,6 +155,11 @@ const char blit_shader_glsl[] = GLSL(330,
 	uniform float max_brightness;
 	layout(location = UNIFORM_TIME_LOC)
 	uniform float time;
+	// Progress of the window's shader animation. x is the raw animation
+	// progress (0-1), y is the animation duration in seconds; a negative y
+	// means the animation is an opening animation.
+	layout(location = UNIFORM_PROGRESS_LOC)
+	uniform vec2 bmw_progress;
 	// Signed distance field for rectangle center at (0, 0), with size of
 	// half_size * 2
 	// Returns 2 number: the distance, and the approximate chord length inside

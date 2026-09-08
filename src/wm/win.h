@@ -292,6 +292,8 @@ static const struct script_output_info win_script_outputs[] = {
     [WIN_SCRIPT_SHADOW_RED] = {"shadow-red"},
     [WIN_SCRIPT_SHADOW_GREEN] = {"shadow-green"},
     [WIN_SCRIPT_SHADOW_BLUE] = {"shadow-blue"},
+    [WIN_SCRIPT_SHADER_PROGRESS] = {"shader-progress"},
+    [WIN_SCRIPT_SHADER_DURATION] = {"shader-duration"},
     [NUM_OF_WIN_SCRIPT_OUTPUTS] = {NULL},
 };
 

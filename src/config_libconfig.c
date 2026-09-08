@@ -16,6 +16,7 @@
 #include "common.h"
 #include "config.h"
 #include "log.h"
+#include "transition/bmw_shaders.h"
 #include "transition/preset.h"
 #include "transition/script.h"
 #include "utils/dynarr.h"
@@ -238,10 +239,13 @@ enum animation_trigger parse_animation_trigger(const char *trigger) {
 
 /// Compile a script from `setting` into `result`, return false on failure.
 /// Only the `script` and `output_indices` fields of `result` will be modified.
-static bool
-compile_win_script(struct win_script *result, config_setting_t *setting, char **err) {
+static struct shader_specification *
+parse_shader_specification(config_setting_t *setting, const char *include_dir,
+                           const char *scope);
+static bool compile_win_script(struct win_script *result, config_setting_t *setting,
+                               char **err, const char *include_dir) {
 	if (config_setting_lookup(setting, "preset")) {
-		return win_script_parse_preset(result, setting);
+		return win_script_parse_preset(result, setting, include_dir);
 	}
 
 	struct script_output_info outputs[ARR_SIZE(win_script_outputs)];
@@ -314,8 +318,9 @@ static bool set_animation(struct win_script *animations, uint64_t triggers,
 	return needed;
 }
 
-static bool parse_animation_one(struct win_script *animations,
-                                struct script ***all_scripts, config_setting_t *setting) {
+static bool parse_animation_one(struct win_script *animations, struct script ***all_scripts,
+                                struct shader_specification ***all_shader_specs,
+                                const char *include_dir, config_setting_t *setting) {
 	struct win_script result = {};
 	auto triggers = config_setting_lookup(setting, "triggers");
 	if (!triggers) {
@@ -435,12 +440,29 @@ static bool parse_animation_one(struct win_script *animations,
 		result.suppressions |= to_set;
 	}
 	result.suppressions &= (1 << ANIMATION_TRIGGER_COUNT) - 1;
+	auto shader_setting = config_setting_lookup(setting, "shader");
+	if (shader_setting != NULL) {
+		const char *embedded_name = config_setting_get_string(shader_setting);
+		if (embedded_name != NULL && bmw_lookup_embedded_shader(embedded_name) != NULL) {
+			// One of the shaders built into the binary, no need to resolve a
+			// path for it.
+			result.shader = shader_spec_from_path(embedded_name);
+		} else {
+			result.shader = parse_shader_specification(
+			    shader_setting, include_dir, "shaders");
+		}
+		if (result.shader == NULL) {
+			return false;
+		}
+		config_setting_remove(setting, "shader");
+	}
 
 	char *err;
-	if (!compile_win_script(&result, setting, &err)) {
+	if (!compile_win_script(&result, setting, &err, include_dir)) {
 		log_error("Failed to parse animation script at line %d: %s",
 		          config_setting_source_line(setting), err);
 		free(err);
+		free(result.shader);
 		return false;
 	}
 
@@ -448,19 +470,24 @@ static bool parse_animation_one(struct win_script *animations,
 	                            config_setting_source_line(setting));
 	if (!needed) {
 		script_free(result.script);
+		free(result.shader);
 	} else {
 		dynarr_push(*all_scripts, result.script);
+		dynarr_push(*all_shader_specs, result.shader);
 	}
 	return true;
 }
 
 /// `out_scripts`: all the script objects created, this is a dynarr.
-static void parse_animations(struct win_script *animations, config_setting_t *setting,
-                             struct script ***out_scripts) {
+static void
+parse_animations(struct win_script *animations, config_setting_t *setting,
+                 struct script ***out_scripts,
+                 struct shader_specification ***out_shader_specs, const char *include_dir) {
 	auto number_of_animations = (unsigned)config_setting_length(setting);
 	for (unsigned i = 0; i < number_of_animations; i++) {
 		auto sub = config_setting_get_elem(setting, i);
-		parse_animation_one(animations, out_scripts, sub);
+		parse_animation_one(animations, out_scripts, out_shader_specs,
+		                    include_dir, sub);
 	}
 }
 
@@ -487,7 +514,7 @@ static bool compile_win_script_from_string(struct win_script *result, const char
 
 	// Since we are compiling scripts we generated, it can't fail.
 	char *err = NULL;
-	bool succeeded = compile_win_script(result, setting, &err);
+	bool succeeded = compile_win_script(result, setting, &err, NULL);
 	config_destroy(&tmp_config);
 	BUG_ON(err != NULL);
 
@@ -653,7 +680,8 @@ static const struct {
 };
 
 static struct shader_specification *
-parse_shader_specification(config_setting_t *setting, const char *include_dir) {
+parse_shader_specification(config_setting_t *setting, const char *include_dir,
+                           const char *scope) {
 	const char *path = config_setting_get_string(setting);
 	config_setting_t *defines = NULL;
 	unsigned n = 0;
@@ -675,7 +703,7 @@ parse_shader_specification(config_setting_t *setting, const char *include_dir) {
 		n = defines ? (unsigned)config_setting_length(defines) : 0;
 	}
 
-	char *full_path = locate_auxiliary_file("shader", path, include_dir);
+	char *full_path = locate_auxiliary_file(scope, path, include_dir);
 	if (!full_path) {
 		log_error("Couldn't find custom shader file with name \"%s\"", path);
 		return NULL;
@@ -715,9 +743,9 @@ parse_shader_specification(config_setting_t *setting, const char *include_dir) {
 	return ret;
 }
 
-static bool
-parse_rule(struct list_node *rules, config_setting_t *setting, const char *include_dir,
-           struct script ***out_scripts, bool *deprecated) {
+static bool parse_rule(struct list_node *rules, config_setting_t *setting,
+                       const char *include_dir, struct script ***out_scripts,
+                       struct shader_specification ***out_shader_specs, bool *deprecated) {
 	if (!config_setting_is_group(setting)) {
 		log_error("Invalid rule at line %d. It must be a group.",
 		          config_setting_source_line(setting));
@@ -774,12 +802,14 @@ parse_rule(struct list_node *rules, config_setting_t *setting, const char *inclu
 
 	auto animations = config_setting_lookup(setting, "animations");
 	if (animations) {
-		parse_animations(wopts->animations, animations, out_scripts);
+		parse_animations(wopts->animations, animations, out_scripts,
+		                 out_shader_specs, include_dir);
 	}
 
 	auto shader_setting = config_setting_lookup(setting, "shader");
 	if (shader_setting) {
-		wopts->shader = parse_shader_specification(shader_setting, include_dir);
+		wopts->shader =
+		    parse_shader_specification(shader_setting, include_dir, "shader");
 		if (!wopts->shader) {
 			c2_condition_set_data(rule, NULL);
 			free(wopts);
@@ -789,9 +819,9 @@ parse_rule(struct list_node *rules, config_setting_t *setting, const char *inclu
 	return true;
 }
 
-static bool
-parse_rules(struct list_node *rules, config_setting_t *setting, const char *include_dir,
-            struct script ***out_scripts, bool *deprecated) {
+static bool parse_rules(struct list_node *rules, config_setting_t *setting,
+                        const char *include_dir, struct script ***out_scripts,
+                        struct shader_specification ***out_shader_specs, bool *deprecated) {
 	if (!config_setting_is_list(setting)) {
 		log_error("Invalid value for \"rules\" at line %d. It must be a list.",
 		          config_setting_source_line(setting));
@@ -800,7 +830,8 @@ parse_rules(struct list_node *rules, config_setting_t *setting, const char *incl
 	const auto length = (unsigned int)config_setting_length(setting);
 	for (unsigned int i = 0; i < length; i++) {
 		auto sub = config_setting_get_elem(setting, i);
-		if (!parse_rule(rules, sub, include_dir, out_scripts, deprecated)) {
+		if (!parse_rule(rules, sub, include_dir, out_scripts, out_shader_specs,
+		                deprecated)) {
 			return false;
 		}
 	}
@@ -930,7 +961,7 @@ bool parse_config_libconfig(options_t *opt, const char *config_file) { /*NOLINT(
 	if (rules) {
 		bool deprecated = false;
 		if (!parse_rules(&opt->rules, rules, config_get_include_dir(&cfg),
-		                 &opt->all_scripts, &deprecated)) {
+		                 &opt->all_scripts, &opt->all_shader_specs, &deprecated)) {
 			log_fatal("Couldn't parse window rules at line %d.",
 			          config_setting_source_line(rules));
 			goto out;
@@ -1224,8 +1255,8 @@ bool parse_config_libconfig(options_t *opt, const char *config_file) { /*NOLINT(
 	// --window-shader-fg
 	subcfg = config_lookup(&cfg, "window-shader-fg");
 	if (subcfg) {
-		opt->window_shader_fg =
-		    parse_shader_specification(subcfg, config_get_include_dir(&cfg));
+		opt->window_shader_fg = parse_shader_specification(
+		    subcfg, config_get_include_dir(&cfg), "shader");
 		if (!opt->window_shader_fg) {
 			goto out;
 		}
@@ -1233,8 +1264,8 @@ bool parse_config_libconfig(options_t *opt, const char *config_file) { /*NOLINT(
 
 	subcfg = config_lookup(&cfg, "root-pixmap-shader");
 	if (subcfg) {
-		opt->root_pixmap_shader =
-		    parse_shader_specification(subcfg, config_get_include_dir(&cfg));
+		opt->root_pixmap_shader = parse_shader_specification(
+		    subcfg, config_get_include_dir(&cfg), "shader");
 		if (!opt->root_pixmap_shader) {
 			goto out;
 		}
@@ -1298,7 +1329,8 @@ bool parse_config_libconfig(options_t *opt, const char *config_file) { /*NOLINT(
 
 	config_setting_t *animations = config_lookup(&cfg, "animations");
 	if (animations) {
-		parse_animations(opt->animations, animations, &opt->all_scripts);
+		parse_animations(opt->animations, animations, &opt->all_scripts,
+		                 &opt->all_shader_specs, config_get_include_dir(&cfg));
 	}
 
 	opt->config_file_path = path;

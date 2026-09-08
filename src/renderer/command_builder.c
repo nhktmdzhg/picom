@@ -84,6 +84,7 @@ commands_for_window_body(struct layer *layer, struct backend_command *cmd_base,
 	    .color_inverted = layer->options.invert_color,
 	    .source_mask = NULL,
 	    .max_brightness = max_brightness,
+	    .progress = {layer->shader_progress, layer->shader_duration},
 	};
 	region_scale(&cmd->target_mask, layer->window.origin, layer->scale);
 	region_scale(&cmd->opaque_region, layer->window.origin, layer->scale);

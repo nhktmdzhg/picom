@@ -10,6 +10,7 @@
 * New variables "window-blur-opacity-before", and "window-blur-opacity" are now available in animation scripts. (#919)
 * New per-window option `blur-opacity` can now be used in `rules`. (#919)
 * Macro definitions can now be specified when setting `shader` in window rules. (#1066)
+* Add 16 built-in GLSL window open/close animation effects ported from Burn-My-Windows (glx/egl backends only), available as animation presets, e.g. `preset = "fire-in"`.
 
 ## Deprecations
 

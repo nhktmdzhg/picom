@@ -742,5 +742,6 @@ bool parse_config(options_t *opt, const char *config_file) {
 	list_init_head(&opt->rules);
 
 	opt->all_scripts = dynarr_new(struct script *, 4);
+	opt->all_shader_specs = dynarr_new(struct shader_specification *, 4);
 	return parse_config_libconfig(opt, config_file);
 }

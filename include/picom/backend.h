@@ -165,6 +165,10 @@ struct backend_blit_args {
 	int border_width;
 	/// Whether the source image should be inverted.
 	bool color_inverted;
+	/// Value for the `progress` uniform of the custom shader, if the shader
+	/// uses it. x is the animation progress (0-1), y is the animation duration
+	/// in seconds. (0, 0) otherwise. Used by window open/close shader animations.
+	vec2 progress;
 };
 
 enum backend_image_format {

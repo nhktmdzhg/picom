@@ -641,6 +641,49 @@ endif::[]
   _duration_:: Duration of the animation in seconds.
 --
 
+_Shader effects (glx/egl only)_:::
++
+A set of GLSL fragment shader effects ported from https://github.com/Schneegans/Burn-My-Windows[Burn-My-Windows].
+They apply a custom shader to the window while the animation runs, and are only
+available with the *glx* and *egl* backends. These shaders are compiled into
+the picom binary, so the preset names work out of the box; to customize the
+effect parameters, copy the corresponding `bmw-<nick>.frag` file (shipped in
+the source tree under `data/shaders/`), edit the constants inside, and point
+the _shader_ option of your own animation script at your copy. Note that the
+Burn-My-Windows effects are licensed under the GNU GPL, version 3 or later.
++
+Each effect is available as an `-in` variant for the open trigger and an `-out`
+variant for the close trigger. The options are: ::
++
+--
+  _duration_:: Duration of the animation in seconds. Defaults are:
+  fire 1.5s, glide 0.25s, glitch 0.75s, tv 0.4s, tv-glitch 0.75s,
+  pixelate 0.5s, pixel-wheel 0.3s, pixel-wipe 1s, wisps 1.5s, portal 1.25s,
+  hexagon 1.5s, energize-a 2s, energize-b 1s, aura-glow 0.75s, focus 0.5s,
+  rgbwarp 0.75s.
+--
++
+The available effects are: ::
++
+--
+  _fire_:: The window is consumed by flames, the classic burning-window effect.
+  _glide_:: The window squishes, tilts and fades away.
+  _glitch_:: Digital RGB-split glitch blocks.
+  _tv_:: Classic CRT power-off collapse to a line.
+  _tv-glitch_:: CRT turn-off with digital glitching.
+  _pixelate_:: Pixelated dissolve with noise.
+  _pixel-wheel_:: Pixelated rotating wheel wipe.
+  _pixel-wipe_:: Pixelated wipe expanding from the center of the window.
+  _wisps_:: Wispy curl-noise smoke dissolve.
+  _portal_:: Swirling orange portal.
+  _hexagon_:: Hexagonal grid mask dissolve with glow.
+  _energize-a_:: Beam-down / energize column fade.
+  _energize-b_:: Electric particle shower dissolve.
+  _aura-glow_:: Glowing blurred aura expanding from the window edges.
+  _focus_:: Progressive blur and edge dissolve.
+  _rgbwarp_:: Per-channel RGB warp.
+--
+
 === Advanced
 
 If the existing presets don't meet your needs, it is always possible to define your own animations. To put it simply, an animation script is just a collection of variables, and how their values should be computed. Animation scripts, when running, are evaluated once per frame, and the values of some of the variables are then used to animate the window.
@@ -744,6 +787,31 @@ Currently, these output variables are supported: :::
   [[saved-image-blend]]_saved-image-blend_:: When the window's geometry changes, its content will often change drastically, creating a jarring discontinuity. This output variable allows you to blend the window's content before and after the geometry change, the before and after images will be stretched appropriately to match the animation. This way you can smoothly animated geometry changes. This is a number between 0 and 1. 0 means the saved image is not used, whereas 1 means you will only see the saved image. (EXPERIMENTAL)
 +
 WARNING: The _saved-image-blend_ variable is experimental. It might work incorrectly, cause visual artifacts, or slow down your system. You are welcome to open an issue on GitHub if you encounter any problems to help us improve it, though resolution is not guaranteed.
+
+  _shader-progress_:: While the window is running an animation that has a
+  _shader_ option (see below), this number (between 0 and 1) is passed to the
+  shader as the x component of the *progress* uniform. It has no other effect
+  on the window.
+
+  _shader-duration_:: Similar to _shader-progress_, this number is passed to
+  the shader as the y component of the *progress* uniform, in seconds. Use a
+  negative value to signal an opening animation to the shader.
+
+  In addition to the output variables above, animation scripts support one
+  extra common option: *shader*:: A GLSL fragment shader specification (see
+  xref:_shader_interface[*SHADER INTERFACE*]), either a plain path or a group
+  with _path_ and optional _defines_. While the animation is running, the
+  window is rendered with this shader. The shader receives a vec2 uniform
+  named *progress* (at uniform location 26): x is the value of
+  _shader-progress_, y is the value of _shader-duration_. The names of the
+  built-in Burn-My-Windows shaders (e.g. `bmw-fire.frag`) are resolved from
+  the shaders compiled into the binary, so they work without any files on
+  disk; a shader file of the same name next to the configuration file (or in
+  the `shaders` directory of the XDG configuration locations) overrides the
+  built-in one. Shaders ported from Burn-My-Windows are licensed under the
+  GNU GPL, version 3 or later. Custom shaders are only supported by the
+  *glx* and *egl* backends; on other backends the shader is ignored and the
+  animation has no visible effect.
 
 All coordinates are in pixels, and are in the coordinate system of the screen. Sizes are also in pixels.
 

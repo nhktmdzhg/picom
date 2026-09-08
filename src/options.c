@@ -810,6 +810,11 @@ static void script_ptr_deinit(struct script **ptr) {
 	}
 }
 
+static void shader_spec_ptr_deinit(struct shader_specification **ptr) {
+	free(*ptr);
+	*ptr = NULL;
+}
+
 static bool sanitize_options(struct options *opt) {
 	if (opt->backend == NULL) {
 		log_error("Backend not specified. You must choose one "
@@ -991,6 +996,7 @@ void options_destroy(struct options *options) {
 	free(options->blur_kerns);
 
 	dynarr_free(options->all_scripts, script_ptr_deinit);
+	dynarr_free(options->all_shader_specs, shader_spec_ptr_deinit);
 	memset(options->animations, 0, sizeof(options->animations));
 
 	list_foreach_safe(struct included_config_file, i, &options->included_config_files,

@@ -209,20 +209,28 @@ _gl_average_texture_color(GLuint source_texture, GLuint destination_texture,
 	// Prepare coordinates
 	GLint coord[] = {
 	    // top left
-	    0, 0,        // vertex coord
-	    0, 0,        // texture coord
+	    0,
+	    0,        // vertex coord
+	    0,
+	    0,        // texture coord
 
 	    // top right
-	    to_width, 0,        // vertex coord
-	    width, 0,           // texture coord
+	    to_width,
+	    0,        // vertex coord
+	    width,
+	    0,        // texture coord
 
 	    // bottom right
-	    to_width, to_height,        // vertex coord
-	    width, height,              // texture coord
+	    to_width,
+	    to_height,        // vertex coord
+	    width,
+	    height,        // texture coord
 
 	    // bottom left
-	    0, to_height,        // vertex coord
-	    0, height,           // texture coord
+	    0,
+	    to_height,        // vertex coord
+	    0,
+	    height,        // texture coord
 	};
 	glBufferSubData(GL_ARRAY_BUFFER, 0, (long)sizeof(*coord) * 16, coord);
 
@@ -566,7 +574,7 @@ gl_lower_blit_args(struct gl_data *gd, ivec2 origin, const struct backend_blit_a
 	// clang-format off
 	auto tex_sampler = vec2_eq(args->scale, SCALE_IDENTITY) ?
 	    gd->samplers[GL_SAMPLER_REPEAT] : gd->samplers[GL_SAMPLER_REPEAT_SCALE];
-	struct gl_uniform_value from_uniforms[] = {
+	struct gl_uniform_value from_uniforms[NUMBER_OF_UNIFORMS] = {
 	    [UNIFORM_OPACITY_LOC]        = {.type = GL_FLOAT, .f = (float)args->tint.alpha},
 	    [UNIFORM_INVERT_COLOR_LOC]   = {.type = GL_INT, .i = args->color_inverted},
 	    [UNIFORM_TEX_LOC]            = {.type = GL_TEXTURE_2D,
@@ -607,6 +615,12 @@ gl_lower_blit_args(struct gl_data *gd, ivec2 origin, const struct backend_blit_a
 		from_uniforms[UNIFORM_TIME_LOC] = (struct gl_uniform_value){
 		    .type = GL_FLOAT,
 		    .f = (float)ts.tv_sec * 1000.0F + (float)ts.tv_nsec / 1.0e6F,
+		};
+	}
+	if ((*shader)->uniform_bitmask & (1 << UNIFORM_PROGRESS_LOC)) {
+		from_uniforms[UNIFORM_PROGRESS_LOC] = (struct gl_uniform_value){
+		    .type = GL_FLOAT_VEC2,
+		    .f2 = {args->progress.x, args->progress.y},
 		};
 	}
 	memcpy(uniforms, from_uniforms, sizeof(from_uniforms));

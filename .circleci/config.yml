@@ -60,6 +60,8 @@ jobs:
             printf "\n::: test animgen :::\n"
             build/tools/animgen data/animation_presets.conf >/dev/null 2>error.log
             [ -s error.log ] && cat error.log && exit 1
+            build/tools/animgen shaders data/shaders >/dev/null 2>error2.log
+            [ -s error2.log ] && cat error2.log && exit 1
 
             printf "\n::: Unit tests :::\n"
             ninja -vC build test

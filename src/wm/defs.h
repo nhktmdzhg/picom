@@ -106,6 +106,12 @@ enum win_script_output {
 	WIN_SCRIPT_SHADOW_GREEN,
 	/// Ditto
 	WIN_SCRIPT_SHADOW_BLUE,
+	/// Progress (0-1) of the window's shader animation, if the script has a
+	/// shader attached.
+	WIN_SCRIPT_SHADER_PROGRESS,
+	/// Duration (in seconds) of the window's shader animation. This is passed
+	/// to shaders that scale their effect by the animation duration.
+	WIN_SCRIPT_SHADER_DURATION,
 
 	NUM_OF_WIN_SCRIPT_OUTPUTS,
 };

@@ -119,3 +119,9 @@ The README for the [original Compton project](https://github.com/chjj/compton/) 
 
 picom is free software, made available under the [MIT](LICENSES/MIT) and [MPL-2.0](LICENSES/MPL-2.0) software
 licenses. See the individual source files for details.
+
+The bundled window animation effects (see the `fire`, `glide`, etc. animation
+presets) are ported from [Burn-My-Windows](https://github.com/Schneegans/Burn-My-Windows)
+and are licensed under the [GNU GPL, version 3 or later](LICENSES/GPL-3.0-or-later).
+Since these effects are compiled into the picom binary, the binary is therefore
+distributed under GPL-3.0-or-later as well.

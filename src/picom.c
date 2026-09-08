@@ -58,6 +58,8 @@
 #include "renderer/command_builder.h"
 #include "renderer/layout.h"
 #include "renderer/renderer.h"
+#include "transition/bmw_shaders.h"
+#include "utils/dynarr.h"
 #include "utils/file_watch.h"
 #include "utils/list.h"
 #include "utils/misc.h"
@@ -1836,39 +1838,51 @@ load_shader_source(session_t *ps, const struct shader_specification *spec) {
 	if (source) {
 		log_debug("Shader source already loaded, reusing");
 	} else {
-		FILE *f = fopen(path, "r");
-		if (!f) {
-			log_error("Failed to open custom shader file: %s", path);
-			return NULL;
-		}
+		const char *embedded = bmw_lookup_embedded_shader(path);
+		if (embedded != NULL) {
+			// The shader is built into the binary.
+			source = ccalloc(1, struct shader_source);
+			source->path = path;
+			source->source = embedded;
+			HASH_ADD_KEYPTR(hh, ps->shader_sources, source->path,
+			                strlen(source->path), source);
+		} else {
+			FILE *f = fopen(path, "r");
+			if (!f) {
+				log_error("Failed to open custom shader file: %s", path);
+				return NULL;
+			}
 
-		struct stat statbuf;
-		if (fstat(fileno(f), &statbuf) < 0) {
-			log_error("Failed to access custom shader file: %s", path);
+			struct stat statbuf;
+			if (fstat(fileno(f), &statbuf) < 0) {
+				log_error("Failed to access custom shader file: %s", path);
+				fclose(f);
+				return NULL;
+			}
+
+			auto num_bytes = (size_t)statbuf.st_size;
+			char *source_data = ccalloc(num_bytes + 1, char);
+			auto read_bytes = fread(source_data, sizeof(char), num_bytes, f);
+			auto error = ferror(f);
 			fclose(f);
-			return NULL;
+
+			if (read_bytes < num_bytes || error) {
+				// This is a difficult to hit error case, review
+				// thoroughly.
+				log_error("Failed to read custom shader at %s. (read %zu "
+				          "bytes, "
+				          "expected %zu bytes)",
+				          path, read_bytes, num_bytes);
+				free(source_data);
+				return NULL;
+			}
+
+			source = ccalloc(1, struct shader_source);
+			source->path = path;
+			source->source = source_data;
+			HASH_ADD_KEYPTR(hh, ps->shader_sources, source->path,
+			                strlen(source->path), source);
 		}
-
-		auto num_bytes = (size_t)statbuf.st_size;
-		char *source_data = ccalloc(num_bytes + 1, char);
-		auto read_bytes = fread(source_data, sizeof(char), num_bytes, f);
-		auto error = ferror(f);
-		fclose(f);
-
-		if (read_bytes < num_bytes || error) {
-			// This is a difficult to hit error case, review thoroughly.
-			log_error("Failed to read custom shader at %s. (read %zu bytes, "
-			          "expected %zu bytes)",
-			          path, read_bytes, num_bytes);
-			free(source_data);
-			return NULL;
-		}
-
-		source = ccalloc(1, struct shader_source);
-		source->path = path;
-		source->source = source_data;
-		HASH_ADD_KEYPTR(hh, ps->shader_sources, source->path,
-		                strlen(source->path), source);
 	}
 
 	shader = ccalloc(1, struct shader_info);
@@ -2119,6 +2133,15 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
 		}
 		if (load_shader_source(ps, data->shader) == NULL) {
 			log_error("Failed to load shader source file for window rules");
+		}
+	}
+
+	// Load shader source files used by animation scripts
+	struct shader_specification **spec_p = NULL;
+	dynarr_foreach(ps->o.all_shader_specs, spec_p) {
+		if (*spec_p != NULL && load_shader_source(ps, *spec_p) == NULL) {
+			log_error("Failed to load shader source file for animation "
+			          "scripts");
 		}
 	}
 

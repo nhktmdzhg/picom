@@ -76,6 +76,12 @@ man/*.1
 /tests/testcases/__pycache__/
 *.profraw
 
+# Generated BMW shader sources (regenerate with `tools/animgen shaders`)
+/src/transition/generated/bmw_shader_sources.c
+
+# Local Burn-My-Windows checkout used as porting reference
+/Burn-My-Windows/
+
 # Subproject files
 subprojects/libconfig
 subprojects/.wraplock

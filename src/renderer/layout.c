@@ -51,6 +51,18 @@ static bool layer_from_window(struct layer *out_layer, struct win *w, ivec2 size
 	}
 
 	out_layer->options = w_opts;
+	if (w->running_animation_instance != NULL && w->running_animation.shader != NULL) {
+		// The window is running an animation with a custom shader. Use it
+		// instead of the window's own shader.
+		out_layer->options.shader = w->running_animation.shader;
+		out_layer->shader_progress =
+		    (float)win_animatable_get(w, WIN_SCRIPT_SHADER_PROGRESS);
+		out_layer->shader_duration =
+		    (float)win_animatable_get(w, WIN_SCRIPT_SHADER_DURATION);
+	} else {
+		out_layer->shader_progress = 0;
+		out_layer->shader_duration = 0;
+	}
 	out_layer->scale = (vec2){
 	    .x = win_animatable_get(w, WIN_SCRIPT_SCALE_X),
 	    .y = win_animatable_get(w, WIN_SCRIPT_SCALE_Y),

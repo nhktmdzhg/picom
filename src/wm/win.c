@@ -1651,7 +1651,9 @@ double win_animatable_get(const struct win *w, enum win_script_output output) {
 	case WIN_SCRIPT_SHADOW_SCALE_Y: return 1;
 	case WIN_SCRIPT_CROP_WIDTH:
 	case WIN_SCRIPT_CROP_HEIGHT: return INFINITY;
-	case WIN_SCRIPT_SAVED_IMAGE_BLEND: return 0;
+	case WIN_SCRIPT_SAVED_IMAGE_BLEND:
+	case WIN_SCRIPT_SHADER_PROGRESS: return 0;
+	case WIN_SCRIPT_SHADER_DURATION: return 1;
 	case WIN_SCRIPT_SHADOW_RED: return wopts.shadow_color.red;
 	case WIN_SCRIPT_SHADOW_GREEN: return wopts.shadow_color.green;
 	case WIN_SCRIPT_SHADOW_BLUE: return wopts.shadow_color.blue;

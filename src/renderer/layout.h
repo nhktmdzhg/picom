@@ -40,6 +40,10 @@ struct layer {
 	struct color shadow_color;
 	/// How much the image of this window should be blended with the saved image
 	float saved_image_blend;
+	/// Progress and duration of the window's shader animation, if the window
+	/// is running an animation with a shader attached. Otherwise unused.
+	float shader_progress;
+	float shader_duration;
 	/// Crop the content of this layer to this box, in screen coordinates.
 	struct ibox crop;
 
