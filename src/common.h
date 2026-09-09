@@ -60,6 +60,9 @@ struct conv;
 struct shader_source {
 	const char *path;
 	const char *source;
+	/// Whether `source` is a static string inside the binary (an embedded
+	/// shader), in which case it must not be freed.
+	bool is_embedded;
 	UT_hash_handle hh;
 };
 

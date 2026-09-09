@@ -1844,6 +1844,7 @@ load_shader_source(session_t *ps, const struct shader_specification *spec) {
 			source = ccalloc(1, struct shader_source);
 			source->path = path;
 			source->source = embedded;
+			source->is_embedded = true;
 			HASH_ADD_KEYPTR(hh, ps->shader_sources, source->path,
 			                strlen(source->path), source);
 		} else {
@@ -2431,7 +2432,9 @@ static void session_destroy(session_t *ps) {
 	}
 	HASH_ITER2(ps->shader_sources, source) {
 		HASH_DEL(ps->shader_sources, source);
-		free((void *)source->source);
+		if (!source->is_embedded) {
+			free((void *)source->source);
+		}
 		free(source);
 	}
 
