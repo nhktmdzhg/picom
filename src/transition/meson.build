@@ -23,28 +23,12 @@ animgen_native = executable(
 
 bmw_shader_sources = custom_target(
 	'bmw_shader_sources.c',
-	input: files(
-		'../../data/shaders/bmw-aura-glow.frag',
-		'../../data/shaders/bmw-energize-a.frag',
-		'../../data/shaders/bmw-energize-b.frag',
-		'../../data/shaders/bmw-fire.frag',
-		'../../data/shaders/bmw-focus.frag',
-		'../../data/shaders/bmw-glide.frag',
-		'../../data/shaders/bmw-glitch.frag',
-		'../../data/shaders/bmw-hexagon.frag',
-		'../../data/shaders/bmw-pixel-wheel.frag',
-		'../../data/shaders/bmw-pixel-wipe.frag',
-		'../../data/shaders/bmw-pixelate.frag',
-		'../../data/shaders/bmw-portal.frag',
-		'../../data/shaders/bmw-rgbwarp.frag',
-		'../../data/shaders/bmw-tv-glitch.frag',
-		'../../data/shaders/bmw-tv.frag',
-		'../../data/shaders/bmw-wisps.frag',
-	),
 	output: 'bmw_shader_sources.c',
 	command: [animgen_native, 'shaders',
-	          meson.project_source_root() / 'data' / 'shaders'],
-	capture: true,
+	          meson.project_source_root() / 'data' / 'shaders', '@OUTPUT@'],
+	# Always rerun so newly added shader files are picked up; animgen only
+	# rewrites the output when its content changes, so this is cheap.
+	build_always_stale: true,
 )
 
 srcs += [files('generated/script_templates.c', 'curve.c', 'preset.c', 'script.c'),

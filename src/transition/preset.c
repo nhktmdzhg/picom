@@ -55,4 +55,11 @@ TEST_CASE(bmw_shader_lookup) {
 	TEST_NOTEQUAL(bmw_lookup_embedded_shader("bmw-rgbwarp.frag"), NULL);
 	TEST_EQUAL(bmw_lookup_embedded_shader("nonexistent.frag"), NULL);
 	TEST_EQUAL(bmw_lookup_embedded_shader(""), NULL);
+	// The lookup must be consistent for every embedded shader; this also
+	// guards the sorted-table invariant required by the bsearch lookup.
+	for (unsigned i = 0; i < number_of_bmw_shader_sources; i++) {
+		auto entry = &bmw_shader_sources[i];
+		TEST_EQUAL((void *)bmw_lookup_embedded_shader(entry->path),
+		           (void *)entry->source);
+	}
 }

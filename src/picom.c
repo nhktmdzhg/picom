@@ -1892,6 +1892,20 @@ load_shader_source(session_t *ps, const struct shader_specification *spec) {
 	HASH_ADD_KEYPTR(hh, ps->shaders, shader->spec->data, shader->spec->size, shader);
 	return shader;
 }
+static void shader_sources_destroy(session_t *ps);
+
+TEST_CASE(shader_source_embedded_not_freed) {
+	auto ps = ccalloc(1, struct session);
+	auto spec = shader_spec_from_path("bmw-fire.frag");
+	auto info = load_shader_source(ps, spec);
+	TEST_TRUE(info != NULL);
+	TEST_EQUAL((void *)info->source, (void *)bmw_lookup_embedded_shader("bmw-fire."
+	                                                                    "frag"));
+	shader_sources_destroy(ps);
+	TEST_EQUAL(ps->shader_sources, NULL);
+	free(ps);
+	free(spec);
+}
 
 static struct window_options win_options_from_config(const struct options *opts) {
 	struct window_options ret = {
@@ -2371,6 +2385,18 @@ err:
 	return NULL;
 }
 
+/// Destroy all shader sources in `ps->shader_sources`. Embedded sources are
+/// static strings inside the binary and must not be freed.
+static void shader_sources_destroy(session_t *ps) {
+	HASH_ITER2(ps->shader_sources, source) {
+		HASH_DEL(ps->shader_sources, source);
+		if (!source->is_embedded) {
+			free((void *)source->source);
+		}
+		free(source);
+	}
+}
+
 // NOLINTEND(readability-function-cognitive-complexity)
 
 /**
@@ -2430,13 +2456,7 @@ static void session_destroy(session_t *ps) {
 		assert(shader->backend_shader == NULL);
 		free(shader);
 	}
-	HASH_ITER2(ps->shader_sources, source) {
-		HASH_DEL(ps->shader_sources, source);
-		if (!source->is_embedded) {
-			free((void *)source->source);
-		}
-		free(source);
-	}
+	shader_sources_destroy(ps);
 
 	// Release overlay window
 	if (ps->overlay && session_redirection_mode(ps) == XCB_COMPOSITE_REDIRECT_MANUAL) {
