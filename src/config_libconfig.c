@@ -441,17 +441,18 @@ static bool parse_animation_one(struct win_script *animations, struct script ***
 	}
 	result.suppressions &= (1 << ANIMATION_TRIGGER_COUNT) - 1;
 	auto shader_setting = config_setting_lookup(setting, "shader");
+	struct shader_specification *user_shader = NULL;
 	if (shader_setting != NULL) {
 		const char *embedded_name = config_setting_get_string(shader_setting);
 		if (embedded_name != NULL && bmw_lookup_embedded_shader(embedded_name) != NULL) {
 			// One of the shaders built into the binary, no need to resolve a
 			// path for it.
-			result.shader = shader_spec_from_path(embedded_name);
+			user_shader = shader_spec_from_path(embedded_name);
 		} else {
-			result.shader = parse_shader_specification(
-			    shader_setting, include_dir, "shaders");
+			user_shader = parse_shader_specification(shader_setting,
+			                                         include_dir, "shaders");
 		}
-		if (result.shader == NULL) {
+		if (user_shader == NULL) {
 			return false;
 		}
 		config_setting_remove(setting, "shader");
@@ -463,7 +464,14 @@ static bool parse_animation_one(struct win_script *animations, struct script ***
 		          config_setting_source_line(setting), err);
 		free(err);
 		free(result.shader);
+		free(user_shader);
 		return false;
+	}
+	if (user_shader != NULL) {
+		// An explicitly specified shader overrides the one attached to a
+		// preset.
+		free(result.shader);
+		result.shader = user_shader;
 	}
 
 	bool needed = set_animation(animations, trigger_types, result,
