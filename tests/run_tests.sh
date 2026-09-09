@@ -22,3 +22,4 @@ eval `dbus-launch --sh-syntax`
 ./run_one_test.sh $exe configs/issue394.conf testcases/issue394.py
 ./run_one_test.sh $exe configs/issue239.conf testcases/issue525.py
 ./run_one_test.sh $exe configs/pull1091.conf testcases/pull1091.py
+./run_one_test.sh $exe configs/shader_animation.conf testcases/shader_animation.py
