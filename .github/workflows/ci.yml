@@ -1,0 +1,110 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    env:
+      CC: ${{ matrix.compiler }}
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm gcc clang git meson ninja make pkgconf cmake uthash libconfig \
+            libdbus libepoxy libev libx11 libxcb pcre2 pixman xcb-util \
+            xcb-util-image xcb-util-renderutil libglvnd mesa xorgproto \
+            xorg-server-xvfb xorg-xauth dbus python python-xcffib python-dbus-next
+
+      - uses: actions/checkout@v4
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build
+        run: |
+          meson setup -Dunittest=true build
+          ninja -C build
+          # animgen is not built by default.
+          ninja -C build tools/animgen
+
+      - name: animgen parity
+        run: |
+          set +e
+          build/tools/animgen data/animation_presets.conf >/dev/null 2>err.log
+          if [ -s err.log ]; then cat err.log; exit 1; fi
+          build/tools/animgen shaders data/shaders >/dev/null 2>err2.log
+          if [ -s err2.log ]; then cat err2.log; exit 1; fi
+          echo "animgen OK"
+          set -e
+
+      - name: Unit tests
+        run: meson test -C build
+
+      - name: Config parsing tests
+        run: |
+          xvfb-run -a -s "-screen 0 640x480x24" \
+            build/src/picom --config tests/configs/parsing_test.conf --no-vsync --diagnostics
+          xvfb-run -a -s "-screen 0 640x480x24" \
+            build/src/picom --config tests/configs/rules_test.conf --no-vsync --diagnostics
+
+      - name: Functional test suite
+        run: |
+          dbus-uuidgen --ensure
+          tests/run_tests.sh build/src/picom
+
+  minimal:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    env:
+      CC: ${{ matrix.compiler }}
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm gcc clang git meson ninja make pkgconf cmake uthash libconfig \
+            libdbus libev libx11 libxcb pcre2 pixman xcb-util \
+            xcb-util-image xcb-util-renderutil xorgproto
+
+      - uses: actions/checkout@v4
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build
+        run: |
+          meson setup -Dopengl=false -Ddbus=false -Dregex=false build
+          ninja -C build
+
+  release:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    env:
+      CC: ${{ matrix.compiler }}
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm gcc clang git meson ninja make pkgconf cmake uthash libconfig \
+            libdbus libepoxy libev libx11 libxcb pcre2 pixman xcb-util \
+            xcb-util-image xcb-util-renderutil libglvnd mesa xorgproto \
+            xorg-server-xvfb xorg-xauth dbus python python-xcffib python-dbus-next
+
+      - uses: actions/checkout@v4
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build and test
+        run: |
+          meson setup --buildtype=release -Dunittest=true build
+          ninja -C build
+          meson test -C build

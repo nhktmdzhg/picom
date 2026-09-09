@@ -45,7 +45,10 @@ def create_client_window(name):
     conn.core.MapWindowChecked(client_win).check()
     return client_win
 
-loop = asyncio.get_event_loop()
+# asyncio.get_event_loop() no longer works in the main thread on Python
+# 3.14+, so create an explicit loop.
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 bus = loop.run_until_complete(MessageBus().connect())
 
 cmid = conn.generate_id()

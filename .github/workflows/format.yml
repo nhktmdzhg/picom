@@ -1,0 +1,23 @@
+name: clang-format
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm git clang
+
+      - uses: actions/checkout@v4
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Check formatting
+        run: |
+          # Skip generated files and the test.h subproject.
+          files=$(git ls-files '*.c' '*.h' | grep -vE '^(src/transition/generated/|subprojects/test\.h/)')
+          clang-format --dry-run -Werror $files
