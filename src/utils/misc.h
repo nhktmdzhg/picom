@@ -31,8 +31,7 @@ __attribute__((optnone))
 #else
 __attribute__((optimize("-fno-fast-math")))
 #endif
-static inline bool
-safe_isnan(double a) {
+static inline bool safe_isnan(double a) {
 	return __builtin_isnan(a);
 }
 
@@ -41,8 +40,7 @@ __attribute__((optnone))
 #else
 __attribute__((optimize("-fno-fast-math")))
 #endif
-static inline bool
-safe_isinf(double a) {
+static inline bool safe_isinf(double a) {
 	return __builtin_isinf(a);
 }
 
@@ -121,14 +119,14 @@ safe_isinf(double a) {
 	({                                                                               \
 		auto __to_tmp = (val);                                                   \
 		ASSERT_IN_RANGE(__to_tmp, 0, UINT16_MAX);                                \
-		(uint16_t) __to_tmp;                                                     \
+		(uint16_t)__to_tmp;                                                      \
 	})
 
 #define to_i16_checked(val)                                                              \
 	({                                                                               \
 		int64_t __to_tmp = (int64_t)(val);                                       \
 		ASSERT_IN_RANGE(__to_tmp, INT16_MIN, INT16_MAX);                         \
-		(int16_t) __to_tmp;                                                      \
+		(int16_t)__to_tmp;                                                       \
 	})
 
 #define to_u32_checked(val)                                                              \
@@ -138,7 +136,7 @@ safe_isinf(double a) {
 		                                                  tautological           \
 		                                                  comparison warning */  \
 		ASSERT_IN_RANGE(__to_tmp, 0, __to_u32_max);                              \
-		(uint32_t) __to_tmp;                                                     \
+		(uint32_t)__to_tmp;                                                      \
 	})
 
 static inline uint16_t u64_to_u16_saturated(uint64_t val) {

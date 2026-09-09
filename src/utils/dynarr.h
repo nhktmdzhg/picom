@@ -154,7 +154,7 @@ static inline void dynarr_remove_swap_impl(size_t size, void *arr, size_t idx) {
 	do {                                                                             \
 		if ((n) > 0) {                                                           \
 			dynarr_reserve(arr, n);                                          \
-			memcpy(dynarr_end(arr), other, sizeof(typeof(*(arr))[(n)]));     \
+			memcpy(dynarr_end(arr), other, sizeof(typeof (*(arr))[(n)]));    \
 			dynarr_len(arr) += (n);                                          \
 		}                                                                        \
 	} while (0)
