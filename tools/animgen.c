@@ -503,7 +503,7 @@ static int run_shaders_mode(const char *dir) {
 	printf("// GNU GPL, version 3 or later.\n");
 	printf("#include <stddef.h>\n");
 	printf("#include <string.h>\n\n");
-	printf("#include \"../bmw_shaders.h\"\n\n");
+	printf("#include \"transition/bmw_shaders.h\"\n\n");
 	printf("const struct bmw_shader_entry bmw_shader_sources[] = {\n");
 	dynarr_foreach(names, name) {
 		char *path = malloc(strlen(dir) + strlen(*name) + 2);
