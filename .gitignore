@@ -79,6 +79,9 @@ man/*.1
 # Local Burn-My-Windows checkout used as porting reference
 /Burn-My-Windows/
 
+# Generated sources (animgen output lives in the build directory)
+/src/transition/generated/
+
 # Subproject files
 subprojects/libconfig
 subprojects/.wraplock

@@ -22,6 +22,10 @@ if git.found()
 	endif
 endif
 
+# bmw_shaders.c embeds the shader sources with the C23 #embed directive;
+# clang warns about it being an extension in C11 mode.
+add_global_arguments(cc.get_supported_arguments('-Wno-c23-extensions'), language: 'c')
+
 add_global_arguments('-DPICOM_VERSION="v'+meson.project_version()+'"', language: 'c')
 if is_variable('repository')
 	add_global_arguments('-DPICOM_FULL_VERSION="v'+meson.project_version()+' ('+repository+' revision '+commit_hash_short+')"', language: 'c')

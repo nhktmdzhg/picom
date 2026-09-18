@@ -1,7 +1,5 @@
-# The shader sources are embedded into the binary. They are generated at
-# build time by `tools/animgen.c` from `data/shaders/*.frag`, so no
-# generated file is kept in the git tree.
-
+# animgen compiles the animation presets from data/animation_presets.conf
+# into C code.
 animgen_native = executable(
 	'animgen_native',
 	files(
@@ -21,15 +19,14 @@ animgen_native = executable(
 	install: false,
 )
 
-bmw_shader_sources = custom_target(
-	'bmw_shader_sources.c',
-	output: 'bmw_shader_sources.c',
-	command: [animgen_native, 'shaders',
-	          meson.project_source_root() / 'data' / 'shaders', '@OUTPUT@'],
-	# Always rerun so newly added shader files are picked up; animgen only
-	# rewrites the output when its content changes, so this is cheap.
-	build_always_stale: true,
+# The preset templates are generated into the build directory; no generated
+# file is kept in the git tree. The embedded shader sources are part of the
+# source tree (bmw_shaders.c uses the C23 `#embed` directive).
+script_templates = custom_target(
+	'script_templates.c',
+	output: 'script_templates.c',
+	input: files('../../data/animation_presets.conf'),
+	command: [animgen_native, '@INPUT@', '@OUTPUT@'],
 )
 
-srcs += [files('generated/script_templates.c', 'curve.c', 'preset.c', 'script.c'),
-         bmw_shader_sources]
+srcs += [script_templates, files('bmw_shaders.c', 'curve.c', 'preset.c', 'script.c')]

@@ -37,8 +37,6 @@ jobs:
           set +e
           build/tools/animgen data/animation_presets.conf >/dev/null 2>err.log
           if [ -s err.log ]; then cat err.log; exit 1; fi
-          build/tools/animgen shaders data/shaders >/dev/null 2>err2.log
-          if [ -s err2.log ]; then cat err2.log; exit 1; fi
           echo "animgen OK"
           set -e
 
