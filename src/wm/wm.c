@@ -142,7 +142,7 @@ struct wm_ref *wm_focused_win(struct wm *wm) {
 const struct wm_ref *wm_focused_leader(struct wm *wm) {
 	return wm->focused_win != NULL
 	           ? (struct wm_ref *)&wm->focused_win->leader_final->siblings
-	           : NULL;
+		   : NULL;
 }
 
 const struct wm_ref *wm_ref_leader(const struct wm_ref *cursor) {
@@ -157,13 +157,13 @@ bool wm_ref_is_zombie(const struct wm_ref *cursor) {
 struct wm_ref *wm_ref_below(const struct wm_ref *cursor) {
 	return &to_tree_node(cursor)->parent->children != cursor->inner.next
 	           ? (struct wm_ref *)cursor->inner.next
-	           : NULL;
+		   : NULL;
 }
 
 struct wm_ref *wm_ref_above(const struct wm_ref *cursor) {
 	return &to_tree_node(cursor)->parent->children != cursor->inner.prev
 	           ? (struct wm_ref *)cursor->inner.prev
-	           : NULL;
+		   : NULL;
 }
 
 struct wm_ref *wm_root_ref(const struct wm *wm) {

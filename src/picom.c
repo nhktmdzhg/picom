@@ -2300,8 +2300,8 @@ static session_t *session_init(int argc, char **argv, Display *dpy,
 	    ps->c.c, xcb_change_window_attributes_checked(
 	                 ps->c.c, ps->c.screen_info->root, XCB_CW_EVENT_MASK,
 	                 (const uint32_t[]){XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY |
-	                                    XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-	                                    XCB_EVENT_MASK_PROPERTY_CHANGE}));
+			                    XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+			                    XCB_EVENT_MASK_PROPERTY_CHANGE}));
 	if (e) {
 		log_error_x_error(&ps->c, e, "Failed to setup root window event mask");
 		free(e);

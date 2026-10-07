@@ -74,7 +74,7 @@ ui_message_box_draw_text(struct ui *ui, struct x_connection *c, xcb_window_t win
 		int16_t x = (int16_t)(line->position.x > INT16_MAX ? INT16_MAX
 		                                                   : line->position.x),
 		        y = (int16_t)(line->position.y > INT16_MAX ? INT16_MAX
-		                                                   : line->position.y);
+			                                           : line->position.y);
 		xcb_change_gc(c->c, gc, mask, value_list);
 		xcb_image_text_8(c->c, (uint8_t)strlen(line->text), pixmap, gc, x, y,
 		                 line->text);
@@ -268,9 +268,9 @@ bool ui_message_box_show(struct ui *ui, struct x_connection *c,
 			    (xcb_render_color_t){}, 1,
 			    (const xcb_rectangle_t[]){
 			        {.x = 0,
-			         .y = (int16_t)clamp(height - bar_height, 0, INT16_MAX),
-			         .width = width,
-			         .height = bar_height}});
+				 .y = (int16_t)clamp(height - bar_height, 0, INT16_MAX),
+				 .width = width,
+				 .height = bar_height}});
 			xcb_render_fill_rectangles(
 			    c->c, XCB_RENDER_PICT_OP_SRC, target_picture,
 			    (xcb_render_color_t){
@@ -278,9 +278,9 @@ bool ui_message_box_show(struct ui *ui, struct x_connection *c,
 			    1,
 			    (const xcb_rectangle_t[]){
 			        {.x = (int16_t)((width - bar_width) / 2),
-			         .y = (int16_t)clamp(height - bar_height, 0, INT16_MAX),
-			         .width = bar_width,
-			         .height = bar_height}});
+				 .y = (int16_t)clamp(height - bar_height, 0, INT16_MAX),
+				 .width = bar_width,
+				 .height = bar_height}});
 			if (next_render.tv_nsec >= 1000000000) {
 				next_render.tv_sec++;
 				next_render.tv_nsec -= 1000000000;
